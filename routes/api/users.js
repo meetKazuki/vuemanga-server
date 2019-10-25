@@ -3,8 +3,9 @@ const passport = require('passport');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
-const { userRegistrationValidation, userLoginValidation } = require('../../utils/userValidation');
-
+const validator = require('../../utils/validator');
+const authSchema = require('../../utils/validations/auth');
+const userSchema = require('../../utils/validations/user')
 
 // Models
 const User = require('../../models/User');
@@ -16,10 +17,15 @@ const { secretOrKey } = require('../../config/keys');
 const userData = ['_id', 'email', 'name', 'username', 'mangas', 'favorites'];
 const mangaData = ['_id', 'name', 'mangaId', 'progress', 'status'];
 
+// Validation schemas for user 
+
+const { signupSchema, signinSchema } = authSchema;
+const { profileSchema, usernameSchema } = userSchema;
+
 // GET
 
 // Get user data by username
-router.get('/:username', (req, res) => {
+router.get('/:username', validator(usernameSchema), (req, res) => {
   const { username } = req.params
   User.findOne({ username })
     .populate('mangas', mangaData)
@@ -35,9 +41,8 @@ router.get('/:username', (req, res) => {
 // POST
 
 // Signup API
-router.post('/signup', (req,res) => {
+router.post('/signup', validator(signupSchema), (req,res) => {
   const { email, username, password, name } = req.body;
-  const { error, valid } = userRegistrationValidation(req.body);
 
   User.findOne({
     $or: [
@@ -72,9 +77,9 @@ router.post('/signup', (req,res) => {
 
 
 // Login API
-router.post('/login', (req, res) => {
+router.post('/login', validator(signinSchema), (req, res) => {
   const { email, password } = req.body;
-  const { error, valid } = userLoginValidation(req.body);
+  // const { error, valid } = userLoginValidation(req.body);
   
   User.findOne({ email })
     .then(user => {
@@ -105,7 +110,7 @@ router.post('/login', (req, res) => {
 // PUT
 
 // Update the profile of the user
-router.put('/profile', passport.authenticate('jwt', {session: false}), (req, res) => {
+router.put('/profile', validator(profileSchema), passport.authenticate('jwt', {session: false}), (req, res) => {
   const { name, username } = req.body
   User.findByIdAndUpdate(
     req.user._id,

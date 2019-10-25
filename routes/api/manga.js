@@ -2,11 +2,16 @@ const router = require('express').Router();
 const passport = require('passport');
 const mongoose = require('mongoose');
 const _ = require('lodash');
+const validator = require('../../utils/validator');
+const mangaSchema = require('../../utils/validations/manga');
 
 
 // Models
 const Manga = require('../../models/Manga');
 const User = require('../../models/User');
+
+const { createMangaSchema } = mangaSchema;
+
 
 // Routes for /api/manga
 
@@ -39,7 +44,7 @@ router.get('/favorites', passport.authenticate('jwt', { session: false }), (req,
 
 // ROUTE -      /api/manga
 // DESC -       Add a new manga/update to the user profile
-router.post('/', passport.authenticate('jwt', {session: false}), (req, res) => {
+router.post('/', validator(createMangaSchema), passport.authenticate('jwt', {session: false}), (req, res) => {
   // Get manga details from the request body
   const { mangaId, status, name } = req.body;
   
